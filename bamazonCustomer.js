@@ -21,6 +21,8 @@ connection.connect((function(err) {
 }));
  
  // displays all of the products
+
+ function displayProducts(){
    
 	connection.query('SELECT * FROM products', function(err, data) {
 	    if (err) {
@@ -44,6 +46,8 @@ connection.connect((function(err) {
 		purchase();
 
 	});
+
+};
  
  // prompts the customer
 
@@ -65,13 +69,27 @@ function purchase(){
 	        var item = answer.id;
 			var quantity = answer.quantity;
 
-		    connection.query('SELECT * FROM products WHERE ?', {item_id: item}, function(err, data) {
+		    connection.query('SELECT * FROM products WHERE ?' + {item_id: item}, function(err, data) {
 
 				console.log(data);
+
+				if (quantity <= data.stock_quantity) {
+
+					console.log("Processing Order");
+
+					connection.query('UPDATE products SET stock_quantity = ' + (data.stock_quantity - quantity) + ' WHERE item_id = ' + item, function(err, data) {
+					});
+
+				}else{
+					console.log("We do not have enough stock to fill your request");
+					displayProducts();
+				}
 
 			});
 		});
 };		
 
-// item console logs correctly but cannot get data to return as defined
+displayProducts();
+
+// item and quantity console logs correctly but cannot get data to return as defined
 
