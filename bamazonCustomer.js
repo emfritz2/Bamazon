@@ -2,7 +2,7 @@
 var mysql = require('mysql');
 var inquirer = require('inquirer');
 
-// var sql = 'SELECT * FROM products';
+var sql = 'SELECT * FROM products';
 
 var connection = mysql.createConnection({
   host: "localhost",
@@ -24,7 +24,7 @@ connection.connect((function(err) {
 
  function displayProducts(){
    
-	connection.query('SELECT * FROM products', function(err, data) {
+	connection.query(sql, function(err, data) {
 	    if (err) {
 	        console.log(err);
 	    }
@@ -41,8 +41,6 @@ connection.connect((function(err) {
 	     console.log(items);
 			};
 
-		connection.end();
-
 		purchase();
 
 	});
@@ -51,45 +49,58 @@ connection.connect((function(err) {
  
  // prompts the customer
 
- // var purchased = [];
-
 function purchase(){
 	    
 	    inquirer.prompt([
 	    {
 	        name: 'id',
+	        type: 'input',
 	        message: 'What is the ID of the product you would like to buy?'
 	    },
 	    {
 	        name: 'quantity',
+	        type: 'input',
 	        message: 'How many would you like to buy?'
 	    }
 	    ]).then(function(answer){
 
-	        var item = answer.id;
-			var quantity = answer.quantity;
+		        var id = parseInt(answer.id);
+				var quantity = parseInt(answer.quantity);
 
-		    connection.query('SELECT * FROM products WHERE ?' + {item_id: item}, function(err, data) {
+				console.log(answer);
 
-				console.log(data);
+				var query = 'SELECT * FROM products WHERE item_id = ?';
 
-				if (quantity <= data.stock_quantity) {
+			    connection.query(query, id, function(err, data) {
 
-					console.log("Processing Order");
+			    	if (err) throw err;
 
-					connection.query('UPDATE products SET stock_quantity = ' + (data.stock_quantity - quantity) + ' WHERE item_id = ' + item, function(err, data) {
-					});
+					console.log(data);
 
-				}else{
-					console.log("We do not have enough stock to fill your request");
-					displayProducts();
-				}
+					var purchase = data[0];
 
-			});
+					if (quantity <= purchase.stock_quantity) {
+
+						console.log("Processing Order. Your total is: " + purchase.price * quantity);
+
+						connection.query('UPDATE products SET stock_quantity = ' + (purchase.stock_quantity - quantity) + ' WHERE item_id = ' + id, function(err, data) {
+						});
+
+					}else{
+						console.log("We do not have enough stock to fill your request.");
+						console.log("Please place a new order.");
+						displayProducts();
+					}
+
+					connection.end();
+
+				});
 		});
+
+
 };		
 
 displayProducts();
 
-// item and quantity console logs correctly but cannot get data to return as defined
+// id and quantity console logs correctly but cannot get data to return as defined
 
